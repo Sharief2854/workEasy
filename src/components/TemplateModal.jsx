@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Plus,
@@ -14,6 +14,15 @@ import {
   ArrowDown,
   ExternalLink,
   Code2,
+  Mail,
+  User,
+  Video,
+  Radio,
+  MicOff,
+  CameraOff,
+  HelpCircle,
+  Layout,
+  BookOpen,
 } from 'lucide-react';
 import { AVAILABLE_ICONS, DynamicIcon } from '../utils/icons';
 import AppPickerModal from './AppPickerModal';
@@ -49,6 +58,8 @@ export default function TemplateModal({
     initialTemplate?.staggerDelayMs !== undefined ? initialTemplate.staggerDelayMs : 500
   );
   const [items, setItems] = useState(initialTemplate?.items || []);
+  const [browserProfiles, setBrowserProfiles] = useState([]);
+  const [thunderboardInfo, setThunderboardInfo] = useState(null);
 
   const [showAppPicker, setShowAppPicker] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -57,9 +68,44 @@ export default function TemplateModal({
   const [activeAddTab, setActiveAddTab] = useState(null); // 'url' | 'folder' | 'command'
   const [newUrl, setNewUrl] = useState('');
   const [newUrlName, setNewUrlName] = useState('');
+  const [newUrlProfileId, setNewUrlProfileId] = useState('');
   const [newCommand, setNewCommand] = useState('');
   const [newCommandName, setNewCommandName] = useState('');
   const [newCommandCwd, setNewCommandCwd] = useState('');
+
+  // Google Meet Automation state
+  const [meetAutoJoin, setMeetAutoJoin] = useState(true);
+  const [meetMuteMic, setMeetMuteMic] = useState(false);
+  const [meetMuteCam, setMeetMuteCam] = useState(false);
+  const [showExtensionGuide, setShowExtensionGuide] = useState(false);
+
+  useEffect(() => {
+    if (window.workEasyApi?.getBrowserProfiles) {
+      window.workEasyApi.getBrowserProfiles().then((p) => {
+        setBrowserProfiles(p || []);
+      }).catch((err) => console.error(err));
+    }
+    if (window.workEasyApi?.getThunderboardInfo) {
+      window.workEasyApi.getThunderboardInfo().then((tb) => {
+        setThunderboardInfo(tb);
+      }).catch((err) => console.error(err));
+    }
+  }, []);
+
+  // Auto-detect Meet URL and suggest Host account (e.g. codegnan / sharief)
+  useEffect(() => {
+    if (newUrl.toLowerCase().includes('meet.google.com')) {
+      if (!newUrlName) setNewUrlName('Google Meet Session');
+      if (!newUrlProfileId && browserProfiles.length > 0) {
+        const hostProfile = browserProfiles.find((p) =>
+          p.email?.toLowerCase().includes('codegnan') ||
+          p.email?.toLowerCase().includes('sharief') ||
+          p.browser === 'chrome'
+        );
+        if (hostProfile) setNewUrlProfileId(hostProfile.id);
+      }
+    }
+  }, [newUrl, browserProfiles, newUrlProfileId, newUrlName]);
 
   // Move item up/down
   const moveItem = (index, direction) => {
@@ -85,6 +131,7 @@ export default function TemplateModal({
 
   // Select App from AppPicker
   const handleSelectApp = (app) => {
+    const isTb = app.isThunderboard || app.name?.toLowerCase().includes('thunderboard') || app.path?.toLowerCase().includes('thunderboard');
     setItems([
       ...items,
       {
@@ -92,7 +139,16 @@ export default function TemplateModal({
         type: 'app',
         name: app.name,
         path: app.path,
-        args: '',
+        args: app.args || '',
+        profileDirectory: app.profileDirectory,
+        profileName: app.profileName,
+        profileEmail: app.profileEmail,
+        browser: app.browser,
+        browserExe: app.browserExe,
+        isUwp: app.isUwp,
+        isThunderboard: isTb,
+        thunderboardBatchId: app.thunderboardBatchId || '',
+        thunderboardBatchName: app.thunderboardBatchName || '',
         enabled: true,
       },
     ]);
@@ -107,6 +163,7 @@ export default function TemplateModal({
       });
       if (filePath) {
         const baseName = filePath.split('\\').pop().replace(/\.[^/.]+$/, '');
+        const isTb = baseName.toLowerCase().includes('thunderboard') || filePath.toLowerCase().includes('thunderboard');
         setItems([
           ...items,
           {
@@ -115,6 +172,9 @@ export default function TemplateModal({
             name: baseName || 'Custom Executable',
             path: filePath,
             args: '',
+            isThunderboard: isTb,
+            thunderboardBatchId: '',
+            thunderboardBatchName: '',
             enabled: true,
           },
         ]);
@@ -153,7 +213,10 @@ export default function TemplateModal({
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = `https://${url}`;
     }
-    const name = newUrlName.trim() || new URL(url).hostname.replace('www.', '');
+    const isMeet = url.toLowerCase().includes('meet.google.com');
+    const name = newUrlName.trim() || (isMeet ? 'Google Meet Session' : new URL(url).hostname.replace('www.', ''));
+    const profile = browserProfiles.find((p) => p.id === newUrlProfileId);
+
     setItems([
       ...items,
       {
@@ -161,11 +224,24 @@ export default function TemplateModal({
         type: 'url',
         name,
         path: url,
+        isMeet,
+        meetAutoJoin: isMeet ? meetAutoJoin : false,
+        meetMuteMic: isMeet ? meetMuteMic : false,
+        meetMuteCam: isMeet ? meetMuteCam : false,
+        profileDirectory: profile?.directory,
+        profileName: profile?.name,
+        profileEmail: profile?.email,
+        browser: profile?.browser,
+        browserExe: profile?.exePath,
         enabled: true,
       },
     ]);
     setNewUrl('');
     setNewUrlName('');
+    setNewUrlProfileId('');
+    setMeetAutoJoin(true);
+    setMeetMuteMic(false);
+    setMeetMuteCam(false);
     setActiveAddTab(null);
   };
 
@@ -431,6 +507,79 @@ export default function TemplateModal({
                       className="px-3 py-1.5 bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-700 dark:border-slate-700 light:border-slate-300 rounded-lg text-xs text-slate-100 dark:text-slate-100 light:text-slate-900 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
+
+                  {browserProfiles.length > 0 && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 light:text-slate-600 uppercase tracking-wider mb-1">
+                        Open with Specific Google / Browser Account (Optional)
+                      </label>
+                      <select
+                        value={newUrlProfileId}
+                        onChange={(e) => setNewUrlProfileId(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-700 dark:border-slate-700 light:border-slate-300 rounded-lg text-xs text-slate-200 dark:text-slate-200 light:text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                      >
+                        <option value="">🌐 System Default Browser</option>
+                        {browserProfiles.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Google Meet Automation Suite */}
+                  {newUrl.toLowerCase().includes('meet.google.com') && (
+                    <div className="p-3 bg-orange-950/20 border border-orange-500/40 rounded-xl space-y-2.5 animate-fadeIn">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-orange-400 font-bold text-xs">
+                          <Video className="w-4 h-4 text-orange-500" />
+                          <span>Google Meet Automation Suite</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowExtensionGuide(true)}
+                          className="text-[10px] text-orange-400 hover:text-orange-300 underline flex items-center gap-1 font-semibold"
+                        >
+                          <HelpCircle className="w-3 h-3" />
+                          <span>Chrome Extension Setup</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <label className="flex items-center space-x-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800 cursor-pointer hover:border-slate-700 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={meetAutoJoin}
+                            onChange={(e) => setMeetAutoJoin(e.target.checked)}
+                            className="rounded border-slate-700 text-orange-600 focus:ring-orange-500 bg-slate-800"
+                          />
+                          <span className="text-slate-200 text-[11px] font-semibold">⚡ Auto-Join Call</span>
+                        </label>
+
+                        <label className="flex items-center space-x-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800 cursor-pointer hover:border-slate-700 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={meetMuteMic}
+                            onChange={(e) => setMeetMuteMic(e.target.checked)}
+                            className="rounded border-slate-700 text-orange-600 focus:ring-orange-500 bg-slate-800"
+                          />
+                          <span className="text-slate-300 text-[11px]">🎙️ Mute Mic before joining</span>
+                        </label>
+
+                        <label className="flex items-center space-x-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800 cursor-pointer hover:border-slate-700 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={meetMuteCam}
+                            onChange={(e) => setMeetMuteCam(e.target.checked)}
+                            className="rounded border-slate-700 text-orange-600 focus:ring-orange-500 bg-slate-800"
+                          />
+                          <span className="text-slate-300 text-[11px]">📷 Turn off Camera before joining</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-end space-x-2">
                     <button
                       type="button"
@@ -551,10 +700,59 @@ export default function TemplateModal({
                               <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-800 dark:bg-slate-800 light:bg-slate-200 text-slate-400 dark:text-slate-400 light:text-slate-700">
                                 {item.type}
                               </span>
+                              {item.isMeet && (
+                                <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 font-bold">
+                                  <Video className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <span>Meet</span>
+                                </span>
+                              )}
+                              {(item.isThunderboard || item.name?.toLowerCase().includes('thunderboard')) && (
+                                <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">
+                                  <Layout className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <span>{item.thunderboardBatchName ? `Batch: ${item.thunderboardBatchName}` : 'Last Active Batch'}</span>
+                                </span>
+                              )}
+                              {(item.profileEmail || item.profileName) && (
+                                <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/30 font-medium truncate max-w-[220px]">
+                                  <Mail className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <span className="truncate">{item.profileEmail || item.profileName}</span>
+                                </span>
+                              )}
                             </div>
                             <p className="text-[10px] font-mono text-slate-400 dark:text-slate-400 light:text-slate-500 truncate mt-0.5">
                               {isFolder && item.openWith === 'vscode' ? `(VS Code) ${item.path}` : item.path}
                             </p>
+
+                            {/* ThunderBoard Batch Selector */}
+                            {(item.isThunderboard || item.name?.toLowerCase().includes('thunderboard')) && thunderboardInfo?.batches?.length > 0 && (
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                <span className="text-[10px] font-bold text-amber-400/90">📚 Classroom Batch:</span>
+                                <select
+                                  value={item.thunderboardBatchId || ''}
+                                  onChange={(e) => {
+                                    const bId = e.target.value;
+                                    const b = thunderboardInfo.batches.find((x) => x.id === bId);
+                                    const updated = [...items];
+                                    updated[index] = {
+                                      ...updated[index],
+                                      isThunderboard: true,
+                                      thunderboardBatchId: bId,
+                                      thunderboardBatchName: b ? b.name : '',
+                                      name: b ? `ThunderBoard (${b.name})` : 'ThunderBoard v3',
+                                    };
+                                    setItems(updated);
+                                  }}
+                                  className="px-2 py-0.5 text-[10px] rounded bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-semibold cursor-pointer"
+                                >
+                                  <option value="">⚡ Last Active Batch</option>
+                                  {thunderboardInfo.batches.map((b) => (
+                                    <option key={b.id} value={b.id}>
+                                      {b.name} ({b.pageCount} {b.pageCount === 1 ? 'page' : 'pages'})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -621,6 +819,74 @@ export default function TemplateModal({
         onSelectApp={handleSelectApp}
         onBrowseCustomExe={handleBrowseCustomExe}
       />
+
+      {/* Google Meet Extension Setup Guide Dialog */}
+      {showExtensionGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-lg bg-[#0f172a] border border-orange-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2.5 text-white font-bold text-sm">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 border border-orange-500/20 flex items-center justify-center">
+                  <Video className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Google Meet Chrome Extension Setup</h3>
+                  <p className="text-[11px] text-slate-400 font-normal">One-time setup (takes 15 seconds)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowExtensionGuide(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              To allow WorkEasy to automatically mute devices and click <strong>"Join now"</strong> inside your Google Workspace account, load our local helper extension into Chrome:
+            </p>
+
+            <ol className="text-xs text-slate-300 space-y-2.5 list-decimal list-inside bg-[#090d16] p-4 rounded-xl border border-slate-800">
+              <li>
+                In Google Chrome, open: <code className="text-orange-400 font-mono font-bold select-all bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">chrome://extensions</code>
+              </li>
+              <li>
+                Turn ON <strong>"Developer mode"</strong> (toggle switch in the top-right corner of Chrome).
+              </li>
+              <li>
+                Click <strong>"Load unpacked"</strong> at the top-left, and select the folder opened below:
+              </li>
+            </ol>
+
+            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-400 truncate">
+              📂 D:\sharief\workEasy\extensions\workeasy-meet-helper
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.workEasyApi?.openExtensionFolder) {
+                    window.workEasyApi.openExtensionFolder();
+                  }
+                }}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-2 shadow-sm transform active:scale-95"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span>Open Extension Folder in Explorer</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowExtensionGuide(false)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors"
+              >
+                Got It, Done!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

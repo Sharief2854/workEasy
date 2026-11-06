@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Download,
@@ -7,6 +7,11 @@ import {
   Sliders,
   Power,
   Code,
+  Video,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  ArrowDownCircle,
 } from 'lucide-react';
 
 export default function SettingsModal({
@@ -18,6 +23,65 @@ export default function SettingsModal({
   onImport,
   onResetDefaults,
 }) {
+  const [appVersion, setAppVersion] = useState('1.0.0');
+  const [updaterStatus, setUpdaterStatus] = useState({ status: 'idle', message: '' });
+  const [isChecking, setIsChecking] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (window.workEasyApi?.getAppVersion) {
+      window.workEasyApi.getAppVersion().then((v) => {
+        if (v) setAppVersion(v);
+      }).catch(() => {});
+    }
+
+    if (window.workEasyApi?.getUpdaterStatus) {
+      window.workEasyApi.getUpdaterStatus().then((s) => {
+        if (s && s.status !== 'idle') setUpdaterStatus(s);
+      }).catch(() => {});
+    }
+
+    if (window.workEasyApi?.onUpdaterStatus) {
+      const unsubscribe = window.workEasyApi.onUpdaterStatus((statusObj) => {
+        setUpdaterStatus(statusObj);
+        if (statusObj.status !== 'checking') {
+          setIsChecking(false);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [isOpen]);
+
+  const handleCheckForUpdates = async () => {
+    setIsChecking(true);
+    setUpdaterStatus({ status: 'checking', message: 'Checking for updates on GitHub...' });
+    try {
+      const res = await window.workEasyApi?.checkForUpdates();
+      if (res && res.status) {
+        setUpdaterStatus(res);
+      }
+    } catch (err) {
+      setUpdaterStatus({ status: 'error', message: err.message || 'Failed to check updates' });
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleDownloadUpdate = async () => {
+    try {
+      await window.workEasyApi?.downloadUpdate();
+    } catch (err) {
+      setUpdaterStatus({ status: 'error', message: err.message || 'Download failed' });
+    }
+  };
+
+  const handleInstallUpdate = () => {
+    if (window.workEasyApi?.quitAndInstallUpdate) {
+      window.workEasyApi.quitAndInstallUpdate();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -107,6 +171,114 @@ export default function SettingsModal({
             </button>
           </div>
 
+          {/* Browser Integrations */}
+          <div className="space-y-2.5">
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Browser Integrations
+            </h3>
+            <div className="flex items-center justify-between p-3.5 bg-[#090d16] rounded-xl border border-slate-800">
+              <div className="mr-3">
+                <p className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-orange-500" />
+                  <span>Google Meet Automation Extension</span>
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Enables 1-click auto-join for Google Meet calls
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.workEasyApi?.openExtensionFolder) {
+                    window.workEasyApi.openExtensionFolder();
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/30 text-xs font-semibold whitespace-nowrap transition-colors"
+              >
+                Open Folder
+              </button>
+            </div>
+          </div>
+
+          {/* Software Updates (GitHub Releases) */}
+          <div className="space-y-2.5">
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Software Updates
+            </h3>
+            <div className="p-3.5 bg-[#090d16] rounded-xl border border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="mr-3">
+                  <p className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <RefreshCw className={`w-3.5 h-3.5 text-orange-500 ${isChecking ? 'animate-spin' : ''}`} />
+                    <span>GitHub Releases Auto-Update</span>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Installed: <strong className="text-slate-300 font-mono">v{appVersion}</strong> • Channel: <span className="text-orange-400 font-semibold">Sharief2854/workEasy</span>
+                  </p>
+                </div>
+
+                {updaterStatus.status === 'downloaded' ? (
+                  <button
+                    type="button"
+                    onClick={handleInstallUpdate}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Restart & Install</span>
+                  </button>
+                ) : updaterStatus.status === 'available' ? (
+                  <button
+                    type="button"
+                    onClick={handleDownloadUpdate}
+                    className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                  >
+                    <ArrowDownCircle className="w-3.5 h-3.5" />
+                    <span>Download v{updaterStatus.version}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isChecking}
+                    onClick={handleCheckForUpdates}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
+                    <span>{isChecking ? 'Checking...' : 'Check Updates'}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Progress bar when downloading */}
+              {updaterStatus.status === 'downloading' && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>Downloading update...</span>
+                    <span className="font-mono text-orange-400 font-bold">{updaterStatus.percent || 0}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500 transition-all duration-300 rounded-full"
+                      style={{ width: `${updaterStatus.percent || 0}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {updaterStatus.message && updaterStatus.status !== 'downloading' && (
+                <div className={`text-[11px] px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 ${
+                  updaterStatus.status === 'available' ? 'bg-orange-950/20 text-orange-400 border-orange-500/30 font-semibold' :
+                  updaterStatus.status === 'downloaded' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-500/30 font-semibold' :
+                  updaterStatus.status === 'error' ? 'bg-rose-950/20 text-rose-400 border-rose-500/30' :
+                  'bg-slate-900/60 text-slate-400 border-slate-800'
+                }`}>
+                  {updaterStatus.status === 'error' && <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-rose-500" />}
+                  {updaterStatus.status === 'downloaded' && <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-emerald-400" />}
+                  <span className="truncate">{updaterStatus.message}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Developer Attribution Card (Solid, No Gradients) */}
           <div className="p-4 rounded-xl bg-[#090d16] border border-orange-500/30 text-slate-300 space-y-1.5">
             <div className="flex items-center justify-between">
@@ -117,7 +289,7 @@ export default function SettingsModal({
                 <span className="text-xs font-bold text-white">WorkEasy Pro Edition</span>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-orange-500/10 text-orange-500 font-semibold border border-orange-500/20">
-                v1.1.0
+                v{appVersion}
               </span>
             </div>
 

@@ -3,6 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const { loadData, saveData } = require('./store.cjs');
 const { detectInstalledApps } = require('./appDetector.cjs');
+const { getBrowserProfiles } = require('./browserProfiles.cjs');
+const { getThunderboardInfo, setActiveThunderboardBatch } = require('./thunderboard.cjs');
+const { initAutoUpdater, checkForUpdates, downloadUpdate, quitAndInstall, getCurrentStatus } = require('./updater.cjs');
 const { launchTemplate, launchItem } = require('./launcher.cjs');
 
 let mainWindow = null;
@@ -55,6 +58,13 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // Initialize Auto-Updater
+  try {
+    initAutoUpdater(mainWindow);
+  } catch (updErr) {
+    console.error('Failed to initialize auto-updater:', updErr);
+  }
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -89,6 +99,40 @@ ipcMain.handle('save-data', async (_, data) => {
 
 ipcMain.handle('detect-installed-apps', async () => {
   return detectInstalledApps();
+});
+
+ipcMain.handle('get-browser-profiles', async () => {
+  return getBrowserProfiles();
+});
+
+ipcMain.handle('thunderboard:getInfo', async () => {
+  return getThunderboardInfo();
+});
+
+ipcMain.handle('thunderboard:setActiveBatch', async (_, batchId) => {
+  return setActiveThunderboardBatch(batchId);
+});
+
+// ==================== AUTO-UPDATER IPC ====================
+ipcMain.handle('updater:check', async () => {
+  return checkForUpdates();
+});
+
+ipcMain.handle('updater:download', async () => {
+  return downloadUpdate();
+});
+
+ipcMain.handle('updater:install', async () => {
+  quitAndInstall();
+  return true;
+});
+
+ipcMain.handle('updater:getStatus', async () => {
+  return getCurrentStatus();
+});
+
+ipcMain.handle('get-app-version', async () => {
+  return app.getVersion();
 });
 
 ipcMain.handle('select-file', async (_, options = {}) => {
@@ -143,6 +187,12 @@ ipcMain.handle('open-external', async (_, url) => {
     return true;
   }
   return false;
+});
+
+ipcMain.handle('open-extension-folder', async () => {
+  const extPath = path.join(__dirname, '../extensions/workeasy-meet-helper');
+  await shell.openPath(extPath);
+  return extPath;
 });
 
 ipcMain.handle('export-templates', async () => {

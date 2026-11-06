@@ -1,13 +1,18 @@
 {
   "name": "workeasy",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "1-Click Workspace and App Template Launcher for Developers",
   "main": "electron/main.cjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sharief2854/workEasy.git"
+  },
   "scripts": {
     "dev": "concurrently -k \"cross-env VITE_DEV_SERVER=true vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER=true electron .\"",
     "start": "electron .",
     "build:renderer": "vite build",
     "build": "vite build && electron-builder",
+    "build:publish": "vite build && electron-builder --publish always",
     "preview": "vite preview"
   },
   "keywords": [
@@ -17,10 +22,11 @@
     "electron",
     "react"
   ],
-  "author": "WorkEasy",
+  "author": "Sharief",
   "license": "MIT",
   "dependencies": {
     "clsx": "^2.1.1",
+    "electron-updater": "^6.8.11",
     "lucide-react": "^0.475.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -53,9 +59,24 @@
     "win": {
       "icon": "public/workeasy.ico",
       "target": [
-        "dir",
-        "portable"
+        "nsis",
+        "portable",
+        "dir"
       ]
-    }
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "WorkEasy"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Sharief2854",
+        "repo": "workEasy"
+      }
+    ]
   }
 }

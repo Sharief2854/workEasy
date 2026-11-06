@@ -14,6 +14,9 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Mail,
+  Video,
+  Layout,
 } from 'lucide-react';
 import { DynamicIcon } from '../utils/icons';
 
@@ -165,6 +168,9 @@ export default function TemplateCard({
             <div className="mt-2 space-y-1.5 max-h-44 overflow-y-auto pr-1">
               {items.map((item, idx) => {
                 const getIcon = () => {
+                  if (item.isMeet || item.path?.includes('meet.google.com')) {
+                    return <Video className="w-3 h-3 text-emerald-400" />;
+                  }
                   switch (item.type) {
                     case 'app': return <Laptop className="w-3 h-3 text-blue-500" />;
                     case 'folder': return <Folder className="w-3 h-3 text-amber-500" />;
@@ -184,6 +190,23 @@ export default function TemplateCard({
                     <div className="flex items-center space-x-2 truncate flex-1 mr-2">
                       {getIcon()}
                       <span className="font-semibold text-slate-200 dark:text-slate-200 light:text-slate-800 text-xs truncate">{item.name}</span>
+                      {item.isMeet && (
+                        <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 font-bold flex-shrink-0">
+                          <span>Meet</span>
+                        </span>
+                      )}
+                      {(item.isThunderboard || item.thunderboardBatchName || item.name?.toLowerCase().includes('thunderboard')) && (
+                        <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold flex-shrink-0">
+                          <Layout className="w-2.5 h-2.5 flex-shrink-0" />
+                          <span>{item.thunderboardBatchName ? `Batch: ${item.thunderboardBatchName}` : 'ThunderBoard'}</span>
+                        </span>
+                      )}
+                      {(item.profileEmail || item.profileName) && (
+                        <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/30 font-medium truncate max-w-[160px] flex-shrink-0">
+                          <Mail className="w-2.5 h-2.5 flex-shrink-0" />
+                          <span className="truncate">{item.profileEmail || item.profileName}</span>
+                        </span>
+                      )}
                       <span className="text-slate-500 text-[10px] font-mono truncate">
                         {item.type === 'folder' && item.openWith === 'vscode' ? '➜ VS Code' : item.path}
                       </span>

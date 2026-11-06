@@ -12,9 +12,11 @@
 4. [Desktop Shortcut Setup](#-desktop-shortcut-setup)
 5. [Building Standalone .exe Installer](#-building-standalone-exe-installer)
 6. [Key Features](#-key-features)
-7. [How to Configure Workspaces](#-how-to-configure-workspaces)
-8. [Project Structure](#-project-structure)
-9. [Backup & Export](#-backup--export)
+7. [ThunderBoard v3 Integration](#-thunderboard-v3-integration)
+8. [Google Meet & Multi-Account Selection](#-google-meet--multi-account-selection)
+9. [How to Configure Workspaces](#-how-to-configure-workspaces)
+10. [Project Structure](#-project-structure)
+11. [Backup & Export](#-backup--export)
 
 ---
 
@@ -96,22 +98,42 @@ The output executables will be generated in `dist-electron/`:
 ## ✨ Key Features
 
 - ⚡ **1-Click Multi-Tool Orchestration**: Launch IDEs, databases, web tools, and folders with a single click.
+- 🎨 **ThunderBoard v3 Integration**: Native integration with Sharief's ThunderBoard v3. Select any classroom batch (`JFS-56`, `JFS-57`, etc.) and launch directly into that class's canvas notes.
+- 🌐 **Browser Multi-Profile Switcher**: Auto-detects Chrome, Brave, and Edge profiles (e.g. `sharief@codegnan.com`, personal accounts) so links and portals open in the exact designated account.
+- 📹 **Google Meet Automation Suite**: 1-click Auto-Join for calls with pre-meeting mic/camera muting.
 - 🚪 **Automatic Exit On Launch**: Once tools are dispatched, WorkEasy automatically closes itself so your desktop remains clutter-free.
-- 🔍 **Auto App Detector**: Scans your PC for installed software (VS Code, MongoDB Compass, Postman, Chrome, Brave, Git Bash, DBeaver, etc.).
+- 🔍 **Auto App Detector**: Scans your PC for installed software (VS Code, MongoDB Compass, Postman, Chrome, Brave, Git Bash, DBeaver, ThunderBoard, etc.).
 - 📁 **VS Code Folder Launching**: Directly opens project directories in VS Code (`code <path>`).
-- 🌐 **Web Portals**: Opens multiple URLs (ChatGPT, Claude, GitHub, Localhost, Jira) in your browser.
 - ⏱️ **Stagger Delay**: Sequential execution (e.g. 500ms delay) prevents system lag and CPU spikes.
 - 🌙 **Permanent Dark Theme**: Crisp dark design with solid orange accents (`#ea580c`).
+- 🔄 **GitHub Releases Auto-Updater**: Built-in `electron-updater` integration connected to `Sharief2854/workEasy` for 1-click updates.
 - 💾 **JSON Backup & Restore**: Export and import your workspace templates anytime.
+
+---
+
+## 🎨 ThunderBoard v3 Integration
+
+WorkEasy Pro includes deep integration with **ThunderBoard v3** (Sharief's Intelligent Teaching Whiteboard):
+1. **Auto-Discovery**: WorkEasy automatically detects your local ThunderBoard executable and existing classroom batches from storage (`%APPDATA%\ThunderBoard v3\boards\workspace_data.json`).
+2. **Batch Selector Modal**: When adding ThunderBoard to any template, choose from all your active batches (`JFS-56`, `JFS-57`, `test`, or Last Active).
+3. **Instant Pre-Activation**: On launch, WorkEasy safely updates the active batch and passes `--batch-id` and `--batch` parameters, booting ThunderBoard straight into the selected class!
+
+---
+
+## 🌐 Google Meet & Multi-Account Selection
+
+Never join a student lecture or work meeting from the wrong Google account again:
+- **Profile Selection**: Associate any URL or browser app with a specific Chrome profile (e.g., `sharief@codegnan.com`).
+- **Auto-Join**: Optional helper extension handles muting mic, disabling camera, and clicking **"Join now"** seamlessly.
 
 ---
 
 ## 📖 How to Configure Workspaces
 
 1. **Create a Workspace**: Click **"+ New Workspace"** in the top bar.
-2. **Add Applications**: Click **"+ App"** to choose auto-detected tools or browse any `.exe` / `.bat` / `.lnk`.
+2. **Add Applications**: Click **"+ App"** to choose auto-detected tools (like ThunderBoard with a selected batch) or browse any `.exe` / `.bat` / `.lnk`.
 3. **Add Project Directory**: Click **"+ Folder"** ➜ Select your folder ➜ Choose **"Open in VS Code"**.
-4. **Add Web Tabs**: Click **"+ Web URL"** and paste links (e.g. `https://chatgpt.com`).
+4. **Add Web Tabs**: Click **"+ Web URL"** and paste links (choose an optional Chrome profile for Google Meet / portals).
 5. **Add Startup Scripts**: Click **"+ Script"** to add background/terminal commands (e.g. `npm run dev`).
 6. **Launch**: Click **"Launch All"** on the workspace card to open everything with 1 click!
 
@@ -122,17 +144,22 @@ The output executables will be generated in `dist-electron/`:
 ```
 workEasy/
 ├── electron/
-│   ├── main.cjs         # Electron main process & lifecycle management
-│   ├── preload.cjs      # Secure IPC bridge
-│   ├── launcher.cjs     # Application, folder, URL, and script execution engine
-│   ├── appDetector.cjs  # Windows software scanner
-│   └── store.cjs        # JSON local database persistence
+│   ├── main.cjs            # Electron main process & lifecycle management
+│   ├── preload.cjs         # Secure IPC bridge
+│   ├── launcher.cjs        # Application, folder, URL, and script execution engine
+│   ├── appDetector.cjs     # Windows software scanner
+│   ├── browserProfiles.cjs # Chrome, Edge & Brave multi-profile detector
+│   ├── thunderboard.cjs    # ThunderBoard v3 batch detection & switcher
+│   ├── updater.cjs         # GitHub Releases auto-updater engine (electron-updater)
+│   └── store.cjs           # JSON local database persistence
+├── extensions/
+│   └── workeasy-meet-helper/ # Optional companion extension for Google Meet Auto-Join
 ├── src/
 │   ├── components/
 │   │   ├── Header.jsx           # App navigation bar & search
 │   │   ├── TemplateCard.jsx     # Workspace cards with 1-click launch
 │   │   ├── TemplateModal.jsx    # Workspace creator & editor modal
-│   │   ├── AppPickerModal.jsx   # Installed Windows software browser
+│   │   ├── AppPickerModal.jsx   # Installed Windows software & batch browser
 │   │   ├── SettingsModal.jsx    # Preferences, backup & restore
 │   │   └── LaunchToast.jsx      # Real-time execution toast feedback
 │   ├── utils/

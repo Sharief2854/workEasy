@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "WorkEasy Google Meet Auto-Join",
+  "version": "1.0.6",
+  "description": "Automates joining Google Meet calls via WorkEasy Pro.",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

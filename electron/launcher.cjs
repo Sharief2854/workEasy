@@ -19,9 +19,44 @@ async function launchItem(item) {
       case 'url': {
         const urlStr = item.path?.trim();
         if (!urlStr) throw new Error('URL path is empty');
-        const formattedUrl = urlStr.startsWith('http://') || urlStr.startsWith('https://') 
+        let formattedUrl = urlStr.startsWith('http://') || urlStr.startsWith('https://') 
           ? urlStr 
           : `https://${urlStr}`;
+
+        // Handle Google Meet Automation Triggers
+        if (formattedUrl.includes('meet.google.com')) {
+          const hashParts = ['workeasy=1'];
+          if (item.meetAutoJoin !== false) hashParts.push('join=1');
+          if (item.meetMuteMic) hashParts.push('mic=1');
+          if (item.meetMuteCam) hashParts.push('cam=1');
+          
+          if (formattedUrl.includes('#')) {
+            formattedUrl += `&${hashParts.join('&')}`;
+          } else {
+            formattedUrl += `#${hashParts.join('&')}`;
+          }
+        }
+
+        // If a specific browser profile or Chrome account is selected
+        if (item.profileDirectory && item.browserExe) {
+          spawn(item.browserExe, [`--profile-directory=${item.profileDirectory}`, formattedUrl], {
+            detached: true,
+            stdio: 'ignore',
+          }).unref();
+          return { success: true, name, type, message: `Opened in ${item.profileName || item.profileDirectory}: ${formattedUrl}` };
+        } else if (item.profileDirectory) {
+          // Fallback: search for Chrome exe
+          const { getBrowserExe } = require('./browserProfiles.cjs');
+          const chromeExe = getBrowserExe(item.browser || 'chrome');
+          if (chromeExe) {
+            spawn(chromeExe, [`--profile-directory=${item.profileDirectory}`, formattedUrl], {
+              detached: true,
+              stdio: 'ignore',
+            }).unref();
+            return { success: true, name, type, message: `Opened with profile ${item.profileDirectory}: ${formattedUrl}` };
+          }
+        }
+
         await shell.openExternal(formattedUrl);
         return { success: true, name, type, message: `Opened ${formattedUrl}` };
       }
@@ -50,22 +85,90 @@ async function launchItem(item) {
 
       case 'app': {
         const appPath = resolveEnvVars(item.path?.trim());
-        if (!appPath) throw new Error('Executable path is empty');
-        
-        // If file exists at direct path
-        if (fs.existsSync(appPath)) {
-          const args = item.args ? item.args.split(' ').filter(Boolean) : [];
-          const proc = spawn(appPath, args, {
-            detached: true,
-            stdio: 'ignore',
-            cwd: path.dirname(appPath),
-          });
-          proc.unref();
-          return { success: true, name, type, message: `Started ${name}` };
+        if (!appPath && !item.browserExe) throw new Error('Executable / App path is empty');
+
+        // Handle ThunderBoard Automation & Batch Switching
+        const isThunderboard = item.isThunderboard ||
+          item.name?.toLowerCase().includes('thunderboard') ||
+          (appPath && appPath.toLowerCase().includes('thunderboard'));
+
+        if (isThunderboard) {
+          try {
+            const { setActiveThunderboardBatch, getThunderboardExe } = require('./thunderboard.cjs');
+            if (item.thunderboardBatchId || item.thunderboardBatchName) {
+              const switchRes = setActiveThunderboardBatch(item.thunderboardBatchId || item.thunderboardBatchName);
+              if (switchRes.success) {
+                console.log(`[WorkEasy] Pre-activated ThunderBoard batch: ${switchRes.batchName} (${switchRes.batchId})`);
+              }
+            }
+          } catch (tbErr) {
+            console.error('[WorkEasy] Failed to pre-set ThunderBoard batch:', tbErr);
+          }
         }
 
-        // Fallback: Try launching via shell start (e.g. system commands like code, wt, notepad)
-        const cmdStr = item.args ? `start "" "${appPath}" ${item.args}` : `start "" "${appPath}"`;
+        let targetExe = (item.browserExe && fs.existsSync(item.browserExe)) ? item.browserExe : appPath;
+        if (isThunderboard && (!targetExe || !fs.existsSync(targetExe))) {
+          const { getThunderboardExe } = require('./thunderboard.cjs');
+          const fallbackTb = getThunderboardExe();
+          if (fallbackTb) targetExe = fallbackTb;
+        }
+
+        // If specific browser profile is specified
+        if (item.profileDirectory && targetExe && fs.existsSync(targetExe)) {
+          let args = item.args ? item.args.split(' ').filter(Boolean) : [];
+          if (!args.some(a => a.startsWith('--profile-directory='))) {
+            args.unshift(`--profile-directory=${item.profileDirectory}`);
+          }
+          const proc = spawn(targetExe, args, {
+            detached: true,
+            stdio: 'ignore',
+            cwd: path.dirname(targetExe),
+          });
+          proc.unref();
+          return { success: true, name, type, message: `Started ${name} (${item.profileEmail || item.profileName || item.profileDirectory})` };
+        }
+
+        // Check for Windows Modern / UWP / Start Menu AppID (e.g. Microsoft Whiteboard, Teams, etc.)
+        if (appPath && (appPath.startsWith('shell:AppsFolder\\') || item.isUwp)) {
+          const appsFolderTarget = appPath.startsWith('shell:AppsFolder\\') ? appPath : `shell:AppsFolder\\${appPath}`;
+          spawn('explorer.exe', [appsFolderTarget], {
+            detached: true,
+            stdio: 'ignore',
+          }).unref();
+          return { success: true, name, type, message: `Launched Windows App: ${name}` };
+        }
+
+        // Protocol handlers (e.g. ms-whiteboard-cmd:)
+        if (appPath && appPath.includes(':') && !appPath.includes('\\') && !appPath.includes('/')) {
+          await shell.openExternal(appPath);
+          return { success: true, name, type, message: `Launched protocol ${name}` };
+        }
+        
+        // If file exists at direct path
+        if (targetExe && fs.existsSync(targetExe)) {
+          let args = item.args ? item.args.split(' ').filter(Boolean) : [];
+          if (item.profileDirectory && !args.some(a => a.startsWith('--profile-directory='))) {
+            args.unshift(`--profile-directory=${item.profileDirectory}`);
+          }
+          if (isThunderboard && item.thunderboardBatchId) {
+            args.push(`--batch-id=${item.thunderboardBatchId}`);
+            if (item.thunderboardBatchName) {
+              args.push(`--batch=${item.thunderboardBatchName}`);
+            }
+          }
+
+          const proc = spawn(targetExe, args, {
+            detached: true,
+            stdio: 'ignore',
+            cwd: path.dirname(targetExe),
+          });
+          proc.unref();
+          const batchInfo = item.thunderboardBatchName ? ` (Batch: ${item.thunderboardBatchName})` : '';
+          return { success: true, name, type, message: `Started ${name}${batchInfo}` };
+        }
+
+        // Fallback: Launch via Windows Shell (cmd start)
+        const cmdStr = item.args ? `start "" "${targetExe || appPath}" ${item.args}` : `start "" "${targetExe || appPath}"`;
         exec(cmdStr, { shell: 'cmd.exe' });
         return { success: true, name, type, message: `Dispatched ${name}` };
       }
@@ -75,7 +178,7 @@ async function launchItem(item) {
         if (!command) throw new Error('Command is empty');
         const workDir = item.workingDir ? resolveEnvVars(item.workingDir.trim()) : undefined;
 
-        // Open in a new Windows PowerShell or CMD terminal window so the user can see output (e.g. npm run dev)
+        // Open in a new Windows PowerShell terminal window
         const terminalCmd = `start powershell.exe -NoExit -Command "Write-Host '==> Running: ${command.replace(/"/g, '`"')}'; ${command}"`;
         exec(terminalCmd, {
           cwd: workDir && fs.existsSync(workDir) ? workDir : undefined,
@@ -101,7 +204,7 @@ async function launchItem(item) {
 async function launchTemplate(template, options = {}, progressCallback = null) {
   const items = (template.items || []).filter((i) => i.enabled !== false);
   const results = [];
-  const delay = options.staggerDelayMs || template.staggerDelayMs || 500;
+  const delay = options.staggerDelayMs || template.staggerDelayMs || 400;
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -128,7 +231,7 @@ async function launchTemplate(template, options = {}, progressCallback = null) {
       });
     }
 
-    // Delay between launches unless it's the last item
+    // Stagger delay between launches
     if (i < items.length - 1 && delay > 0) {
       await sleep(delay);
     }
