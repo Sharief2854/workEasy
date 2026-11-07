@@ -9,6 +9,8 @@ import {
   Star,
   Layers,
   LayoutGrid,
+  Sparkles,
+  X,
 } from 'lucide-react';
 
 export default function App() {
@@ -23,6 +25,7 @@ export default function App() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [showUpdateBanner, setShowUpdateBanner] = useState(true);
 
   const [launchingTemplateId, setLaunchingTemplateId] = useState(null);
   const [launchStatus, setLaunchStatus] = useState(null);
@@ -263,6 +266,39 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6 space-y-7">
+
+        {/* v1.2.0 Update Announcement Banner */}
+        {showUpdateBanner && (
+          <div className="relative overflow-hidden bg-gradient-to-r from-orange-950/40 via-[#151c28] to-slate-900 border border-orange-500/30 rounded-2xl p-4 shadow-xl flex items-center justify-between gap-4 transition-all">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center justify-center flex-shrink-0 shadow-inner">
+                <Sparkles className="w-5 h-5 text-orange-400 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>WorkEasy Pro v1.2.0 is Live!</span>
+                  </h4>
+                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Auto-Updated</span>
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Refreshed UI theme with top gradient highlights, ThunderBoard v3 classroom batch selector, and 1-click GitHub auto-updates.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowUpdateBanner(false)}
+              className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+              title="Dismiss announcement"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
         
         {/* Empty State */}
         {filteredTemplates.length === 0 && (

@@ -1,6 +1,6 @@
 {
   "name": "workeasy",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "1-Click Workspace and App Template Launcher for Developers",
   "main": "electron/main.cjs",
   "repository": {

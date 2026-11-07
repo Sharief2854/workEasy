@@ -41,20 +41,21 @@
   }
 }
 
-/* Flat Clean Solid Card Utility */
+/* Elevated Clean Solid Card Utility */
 .pro-card {
-  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 html.dark .pro-card {
-  background-color: #111722;
+  background-color: #0e1420;
   border: 1px solid #1e293b;
 }
 
 html.dark .pro-card:hover {
-  background-color: #151d2c;
+  background-color: #131c2c;
   border-color: #ea580c;
-  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -8px rgba(234, 88, 12, 0.25);
+  transform: translateY(-2px);
 }
 
 html.light .pro-card {
@@ -66,6 +67,6 @@ html.light .pro-card {
 html.light .pro-card:hover {
   background-color: #ffffff;
   border-color: #f97316;
-  box-shadow: 0 4px 12px 0 rgba(249, 115, 22, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 6px 16px 0 rgba(249, 115, 22, 0.15);
+  transform: translateY(-2px);
 }

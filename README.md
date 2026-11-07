@@ -196,5 +196,5 @@ To export or backup:
 ## 👤 Author
 
 - **Developed by**: **Sharief**
-- **Edition**: WorkEasy Pro (v1.1.0)
+- **Edition**: WorkEasy Pro (v1.2.0)
 - **License**: MIT

@@ -23,7 +23,7 @@ export default function SettingsModal({
   onImport,
   onResetDefaults,
 }) {
-  const [appVersion, setAppVersion] = useState('1.0.0');
+  const [appVersion, setAppVersion] = useState('1.2.0');
   const [updaterStatus, setUpdaterStatus] = useState({ status: 'idle', message: '' });
   const [isChecking, setIsChecking] = useState(false);
 

@@ -9,29 +9,38 @@ export default function Header({
   templateCount,
 }) {
   return (
-    <header className="sticky top-0 z-30 bg-[#0c1017] border-b border-slate-800 px-6 py-3.5">
+    <header className="sticky top-0 z-30 bg-[#0c1017] border-b border-slate-800/90 px-6 py-3.5 relative">
+      {/* Top Accent Gradient Line */}
+      <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-orange-600 via-amber-500 to-emerald-400" />
+
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         
         {/* Brand & Developer Information */}
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-600/20 border border-orange-400/30">
             <Layers className="w-5 h-5 text-white" />
           </div>
 
           <div>
             <div className="flex items-center space-x-2.5">
-              <span className="text-base font-bold tracking-tight text-white">
-                WorkEasy <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500 border border-orange-500/20">PRO</span>
+              <span className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
+                WorkEasy <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/30">PRO</span>
+              </span>
+
+              {/* v1.2.0 Version Pill with Pulsing Live Dot */}
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>v1.2.0</span>
               </span>
               
               {/* Developer Attribution Tag */}
-              <div className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[11px] font-medium text-slate-300">
+              <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700/80 text-[11px] font-medium text-slate-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                <span>Developed by <strong className="text-orange-400 font-semibold">Sharief</strong></span>
+                <span>By <strong className="text-orange-400 font-semibold">Sharief</strong></span>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 font-medium">
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
               1-Click Workspace & Tool Dispatcher
             </p>
           </div>

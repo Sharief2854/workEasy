@@ -230,12 +230,12 @@ export default function TemplateCard({
         </div>
       </div>
 
-      {/* 1-Click Launch Button (Solid Orange) */}
+      {/* 1-Click Launch Button */}
       <div className="mt-4 pt-3 border-t border-slate-800 dark:border-slate-800 light:border-slate-200">
         <button
           onClick={() => onLaunch(template)}
           disabled={isLaunching || enabledItems.length === 0}
-          className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 text-white bg-orange-600 hover:bg-orange-500 transition-all transform active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+          className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-md shadow-orange-600/25 transition-all transform active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isLaunching ? (
             <>
