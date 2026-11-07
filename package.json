@@ -69,7 +69,8 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
-      "shortcutName": "WorkEasy"
+      "shortcutName": "WorkEasy",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "publish": [
       {

@@ -4,6 +4,7 @@ import TemplateCard from './components/TemplateCard';
 import TemplateModal from './components/TemplateModal';
 import SettingsModal from './components/SettingsModal';
 import LaunchToast from './components/LaunchToast';
+import UpdateModal from './components/UpdateModal';
 import {
   Plus,
   Star,
@@ -26,6 +27,10 @@ export default function App() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [showUpdateBanner, setShowUpdateBanner] = useState(true);
+
+  // Auto-Updater Modal State
+  const [updaterStatus, setUpdaterStatus] = useState(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   const [launchingTemplateId, setLaunchingTemplateId] = useState(null);
   const [launchStatus, setLaunchStatus] = useState(null);
@@ -74,8 +79,20 @@ export default function App() {
         }));
       });
 
+      // Register Auto-Updater status listener
+      let unsubscribeUpdater = null;
+      if (window.workEasyApi?.onUpdaterStatus) {
+        unsubscribeUpdater = window.workEasyApi.onUpdaterStatus((statusObj) => {
+          setUpdaterStatus(statusObj);
+          if (statusObj.status === 'available' || statusObj.status === 'downloaded' || statusObj.status === 'downloading') {
+            setIsUpdateModalOpen(true);
+          }
+        });
+      }
+
       return () => {
         if (unsubscribe) unsubscribe();
+        if (unsubscribeUpdater) unsubscribeUpdater();
       };
     }
   }, []);
@@ -429,6 +446,23 @@ export default function App() {
       <LaunchToast
         launchStatus={launchStatus}
         onClose={() => setLaunchStatus(null)}
+      />
+
+      {/* Auto-Update Modal Popup */}
+      <UpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        updaterStatus={updaterStatus}
+        onDownload={async () => {
+          if (window.workEasyApi?.downloadUpdate) {
+            await window.workEasyApi.downloadUpdate();
+          }
+        }}
+        onInstall={() => {
+          if (window.workEasyApi?.quitAndInstallUpdate) {
+            window.workEasyApi.quitAndInstallUpdate();
+          }
+        }}
       />
     </div>
   );
