@@ -4,20 +4,18 @@
 
 @layer base {
   :root {
-    color-scheme: dark light;
+    color-scheme: dark;
   }
 
-  /* Dark mode background */
-  html.dark body {
-    @apply bg-[#0c1017] text-slate-100;
+  html,
+  body {
+    background-color: #090d14;
+    color: #f1f5f9;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Light mode background */
-  html.light body {
-    @apply bg-[#f8fafc] text-slate-800;
-  }
-
-  /* Sleek modern scrollbar */
+  /* Clean subtle scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -25,48 +23,32 @@
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  html.dark ::-webkit-scrollbar-thumb {
+  ::-webkit-scrollbar-thumb {
     background: #1e293b;
     border-radius: 9999px;
   }
-  html.dark ::-webkit-scrollbar-thumb:hover {
+  ::-webkit-scrollbar-thumb:hover {
     background: #334155;
   }
-  html.light ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 9999px;
-  }
-  html.light ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+
+  /* Consistent accessible focus ring */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline: 2px solid #ea580c;
+    outline-offset: 1px;
   }
 }
 
-/* Elevated Clean Solid Card Utility */
-.pro-card {
-  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-html.dark .pro-card {
-  background-color: #0e1420;
+/* Crisp flat surface card */
+.workspace-card {
+  background-color: #111724;
   border: 1px solid #1e293b;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 
-html.dark .pro-card:hover {
-  background-color: #131c2c;
-  border-color: #ea580c;
-  box-shadow: 0 8px 24px -8px rgba(234, 88, 12, 0.25);
-  transform: translateY(-2px);
-}
-
-html.light .pro-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-}
-
-html.light .pro-card:hover {
-  background-color: #ffffff;
-  border-color: #f97316;
-  box-shadow: 0 6px 16px 0 rgba(249, 115, 22, 0.15);
-  transform: translateY(-2px);
+.workspace-card:hover {
+  background-color: #151d2d;
+  border-color: #334155;
 }

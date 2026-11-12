@@ -145,6 +145,10 @@ ipcMain.handle('select-file', async (_, options = {}) => {
       { name: 'All Files', extensions: ['*'] },
     ],
   });
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.focus();
+    mainWindow.webContents.focus();
+  }
   if (!result.canceled && result.filePaths.length > 0) {
     return result.filePaths[0];
   }
@@ -157,6 +161,10 @@ ipcMain.handle('select-folder', async () => {
     title: 'Select Project Directory / Folder',
     properties: ['openDirectory'],
   });
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.focus();
+    mainWindow.webContents.focus();
+  }
   if (!result.canceled && result.filePaths.length > 0) {
     return result.filePaths[0];
   }

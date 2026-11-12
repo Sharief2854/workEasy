@@ -13,12 +13,13 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   Mail,
   Video,
   Layout,
 } from 'lucide-react';
 import { DynamicIcon } from '../utils/icons';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 
 export default function TemplateCard({
   template,
@@ -41,186 +42,200 @@ export default function TemplateCard({
 
   const accentColor = template.color || '#ea580c';
 
+  const getItemIcon = (item) => {
+    if (item.isMeet || item.path?.includes('meet.google.com')) {
+      return <Video className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" aria-hidden="true" />;
+    }
+    switch (item.type) {
+      case 'app':
+        return <Laptop className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />;
+      case 'folder':
+        return <Folder className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" aria-hidden="true" />;
+      case 'url':
+        return <Globe className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" aria-hidden="true" />;
+      default:
+        return <Terminal className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" aria-hidden="true" />;
+    }
+  };
+
   return (
-    <div
-      className="pro-card rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all"
-      style={{
-        borderTop: `3px solid ${accentColor}`,
-      }}
+    <article
+      className="workspace-card rounded-xl p-5 flex flex-col justify-between"
+      style={{ borderTop: `3px solid ${accentColor}` }}
     >
-      {/* Card Header */}
       <div>
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center space-x-3">
+        {/* Card Header */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold"
+              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{
-                backgroundColor: `${accentColor}18`,
+                backgroundColor: `${accentColor}1a`,
                 color: accentColor,
               }}
             >
               <DynamicIcon name={template.icon || 'Rocket'} className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-100 dark:text-slate-100 light:text-slate-800 flex items-center gap-1.5">
-                {template.name}
-              </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-400 light:text-slate-500 line-clamp-1 mt-0.5">
-                {template.description || 'Workspace Configuration'}
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm text-white truncate">{template.name}</h3>
+              <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
+                {template.description || 'Workspace configuration'}
               </p>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center space-x-0.5">
+          <div className="flex items-center gap-0.5 flex-shrink-0">
             <button
+              type="button"
               onClick={() => onToggleFavorite(template.id)}
-              title={template.favorite ? 'Unstar' : 'Pin to favorites'}
-              className={`p-1.5 rounded-lg transition-colors ${
+              aria-label={template.favorite ? `Unpin ${template.name}` : `Pin ${template.name}`}
+              title={template.favorite ? 'Unpin' : 'Pin to top'}
+              className={`p-1.5 rounded-md transition-colors ${
                 template.favorite
                   ? 'text-amber-400 bg-amber-400/10'
-                  : 'text-slate-500 dark:text-slate-500 light:text-slate-400 hover:text-slate-300 dark:hover:text-slate-300 light:hover:text-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800 light:hover:bg-slate-200'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
             >
-              <Star className={`w-3.5 h-3.5 ${template.favorite ? 'fill-amber-400' : ''}`} />
+              <Star className={`w-3.5 h-3.5 ${template.favorite ? 'fill-amber-400' : ''}`} aria-hidden="true" />
             </button>
 
             <button
+              type="button"
               onClick={() => onEdit(template)}
-              title="Edit Workspace"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 dark:hover:text-slate-200 light:hover:text-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800 light:hover:bg-slate-200 transition-colors"
+              aria-label={`Edit ${template.name}`}
+              title="Edit workspace"
+              className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
 
             <button
+              type="button"
               onClick={() => onDuplicate(template)}
-              title="Duplicate / Clone"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 dark:hover:text-slate-200 light:hover:text-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800 light:hover:bg-slate-200 transition-colors"
+              aria-label={`Duplicate ${template.name}`}
+              title="Duplicate"
+              className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
 
             <button
+              type="button"
               onClick={() => onDelete(template.id)}
-              title="Delete Workspace"
-              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+              aria-label={`Delete ${template.name}`}
+              title="Delete"
+              className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
 
-        {/* Action Type Counters */}
+        {/* Summary Counters */}
         <div className="flex flex-wrap items-center gap-1.5 my-3">
           {apps.length > 0 && (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[11px] font-semibold">
-              <Laptop className="w-3 h-3" />
-              <span>{apps.length} {apps.length === 1 ? 'App' : 'Apps'}</span>
-            </span>
+            <Badge variant="blue" size="sm" icon={<Laptop className="w-3 h-3" aria-hidden="true" />}>
+              {apps.length} {apps.length === 1 ? 'App' : 'Apps'}
+            </Badge>
           )}
 
           {folders.length > 0 && (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[11px] font-semibold">
-              <Folder className="w-3 h-3" />
-              <span>{folders.length} {folders.length === 1 ? 'Folder' : 'Folders'}</span>
-            </span>
+            <Badge variant="amber" size="sm" icon={<Folder className="w-3 h-3" aria-hidden="true" />}>
+              {folders.length} {folders.length === 1 ? 'Folder' : 'Folders'}
+            </Badge>
           )}
 
           {urls.length > 0 && (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[11px] font-semibold">
-              <Globe className="w-3 h-3" />
-              <span>{urls.length} {urls.length === 1 ? 'URL' : 'URLs'}</span>
-            </span>
+            <Badge variant="emerald" size="sm" icon={<Globe className="w-3 h-3" aria-hidden="true" />}>
+              {urls.length} {urls.length === 1 ? 'URL' : 'URLs'}
+            </Badge>
           )}
 
           {commands.length > 0 && (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-purple-500/10 text-purple-500 border border-purple-500/20 text-[11px] font-semibold">
-              <Terminal className="w-3 h-3" />
-              <span>{commands.length} {commands.length === 1 ? 'Script' : 'Scripts'}</span>
-            </span>
+            <Badge variant="purple" size="sm" icon={<Terminal className="w-3 h-3" aria-hidden="true" />}>
+              {commands.length} {commands.length === 1 ? 'Script' : 'Scripts'}
+            </Badge>
           )}
 
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-800 dark:bg-slate-800 light:bg-slate-100 text-slate-400 dark:text-slate-400 light:text-slate-600 text-[10px] font-mono font-medium ml-auto border border-slate-700/50 dark:border-slate-700/50 light:border-slate-300">
-            <Clock className="w-2.5 h-2.5" />
-            <span>{template.staggerDelayMs ? `${template.staggerDelayMs}ms` : 'Instant'}</span>
-          </span>
+          <Badge
+            variant="neutral"
+            size="xs"
+            className="font-mono ml-auto"
+            icon={<Clock className="w-3 h-3" aria-hidden="true" />}
+          >
+            {template.staggerDelayMs ? `${template.staggerDelayMs}ms` : 'Instant'}
+          </Badge>
         </div>
 
-        {/* Item List Accordion */}
-        <div className="border-t border-slate-800 dark:border-slate-800 light:border-slate-200 pt-2.5 mt-2">
+        {/* Configured Items Accordion */}
+        <div className="border-t border-slate-800 pt-2.5 mt-2">
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="w-full flex items-center justify-between text-[11px] font-medium text-slate-400 dark:text-slate-400 light:text-slate-500 hover:text-slate-200 dark:hover:text-slate-200 light:hover:text-slate-800 py-1 transition-colors"
+            aria-expanded={expanded}
+            className="w-full flex items-center justify-between text-xs font-medium text-slate-400 hover:text-slate-200 py-1 transition-colors"
           >
-            <span>
-              Configured Tools ({enabledItems.length} active)
+            <span>Configured tools ({enabledItems.length} active)</span>
+            <span className="flex items-center gap-1">
+              <span>{expanded ? 'Hide' : 'Show'}</span>
+              {expanded ? (
+                <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
             </span>
-            <div className="flex items-center space-x-1">
-              <span>{expanded ? 'Collapse' : 'Expand'}</span>
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </div>
           </button>
 
-          {/* Expanded Tools List */}
           {expanded && (
             <div className="mt-2 space-y-1.5 max-h-44 overflow-y-auto pr-1">
               {items.map((item, idx) => {
-                const getIcon = () => {
-                  if (item.isMeet || item.path?.includes('meet.google.com')) {
-                    return <Video className="w-3 h-3 text-emerald-400" />;
-                  }
-                  switch (item.type) {
-                    case 'app': return <Laptop className="w-3 h-3 text-blue-500" />;
-                    case 'folder': return <Folder className="w-3 h-3 text-amber-500" />;
-                    case 'url': return <Globe className="w-3 h-3 text-emerald-500" />;
-                    case 'command': return <Terminal className="w-3 h-3 text-purple-500" />;
-                    default: return <Sparkles className="w-3 h-3 text-orange-500" />;
-                  }
-                };
+                const isThunderboard =
+                  item.isThunderboard ||
+                  item.thunderboardBatchName ||
+                  item.name?.toLowerCase().includes('thunderboard');
 
                 return (
                   <div
                     key={item.id || idx}
-                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs bg-slate-900/80 dark:bg-slate-900/80 light:bg-slate-100 border border-slate-800 dark:border-slate-800 light:border-slate-300 transition-colors ${
-                      item.enabled === false ? 'opacity-35 line-through' : 'hover:border-slate-700 dark:hover:border-slate-700 light:hover:border-slate-400'
+                    className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-xs bg-surface-subtle border border-slate-800 ${
+                      item.enabled === false ? 'opacity-40 line-through' : 'hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center space-x-2 truncate flex-1 mr-2">
-                      {getIcon()}
-                      <span className="font-semibold text-slate-200 dark:text-slate-200 light:text-slate-800 text-xs truncate">{item.name}</span>
-                      {item.isMeet && (
-                        <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 font-bold flex-shrink-0">
-                          <span>Meet</span>
-                        </span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {getItemIcon(item)}
+                      <span className="font-medium text-slate-200 truncate">{item.name}</span>
+
+                      {item.isMeet && <Badge variant="blue">Meet</Badge>}
+
+                      {isThunderboard && (
+                        <Badge
+                          variant="amber"
+                          className="flex-shrink-0"
+                          icon={<Layout className="w-2.5 h-2.5" aria-hidden="true" />}
+                        >
+                          {item.thunderboardBatchName || 'ThunderBoard'}
+                        </Badge>
                       )}
-                      {(item.isThunderboard || item.thunderboardBatchName || item.name?.toLowerCase().includes('thunderboard')) && (
-                        <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold flex-shrink-0">
-                          <Layout className="w-2.5 h-2.5 flex-shrink-0" />
-                          <span>{item.thunderboardBatchName ? `Batch: ${item.thunderboardBatchName}` : 'ThunderBoard'}</span>
-                        </span>
-                      )}
+
                       {(item.profileEmail || item.profileName) && (
-                        <span className="inline-flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/30 font-medium truncate max-w-[160px] flex-shrink-0">
-                          <Mail className="w-2.5 h-2.5 flex-shrink-0" />
+                        <Badge
+                          variant="brand"
+                          className="truncate max-w-[140px] flex-shrink-0"
+                          icon={<Mail className="w-2.5 h-2.5 flex-shrink-0" aria-hidden="true" />}
+                        >
                           <span className="truncate">{item.profileEmail || item.profileName}</span>
-                        </span>
+                        </Badge>
                       )}
-                      <span className="text-slate-500 text-[10px] font-mono truncate">
-                        {item.type === 'folder' && item.openWith === 'vscode' ? '➜ VS Code' : item.path}
-                      </span>
                     </div>
 
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onLaunchSingleItem(item);
-                      }}
-                      title="Test launch this specific item"
-                      className="text-slate-400 hover:text-orange-500 p-1 hover:bg-slate-800 dark:hover:bg-slate-800 light:hover:bg-slate-200 rounded transition-colors"
+                      type="button"
+                      onClick={() => onLaunchSingleItem(item)}
+                      aria-label={`Launch ${item.name} individually`}
+                      title="Launch this item"
+                      className="text-slate-400 hover:text-brand-400 p-1 hover:bg-slate-800 rounded transition-colors flex-shrink-0"
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
                   </div>
                 );
@@ -230,26 +245,28 @@ export default function TemplateCard({
         </div>
       </div>
 
-      {/* 1-Click Launch Button */}
-      <div className="mt-4 pt-3 border-t border-slate-800 dark:border-slate-800 light:border-slate-200">
-        <button
+      {/* Launch Button */}
+      <div className="mt-4 pt-3 border-t border-slate-800">
+        <Button
+          variant="primary"
+          size="md"
+          className="w-full py-2.5"
           onClick={() => onLaunch(template)}
           disabled={isLaunching || enabledItems.length === 0}
-          className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-md shadow-orange-600/25 transition-all transform active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isLaunching ? (
             <>
               <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Launching & Closing...</span>
+              <span>Launching...</span>
             </>
           ) : (
             <>
-              <Play className="w-3.5 h-3.5 fill-white" />
+              <Play className="w-3.5 h-3.5 fill-white" aria-hidden="true" />
               <span>Launch All ({enabledItems.length})</span>
             </>
           )}
-        </button>
+        </Button>
       </div>
-    </div>
+    </article>
   );
 }

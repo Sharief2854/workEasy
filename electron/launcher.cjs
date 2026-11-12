@@ -6,6 +6,17 @@ const { resolveEnvVars } = require('./appDetector.cjs');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function parseArgs(argStr) {
+  if (!argStr || typeof argStr !== 'string') return [];
+  const regex = /[^\s"]+|"([^"]*)"/gi;
+  const args = [];
+  let match;
+  while ((match = regex.exec(argStr)) !== null) {
+    args.push(match[1] !== undefined ? match[1] : match[0]);
+  }
+  return args;
+}
+
 async function launchItem(item) {
   if (!item || !item.enabled) {
     return { success: false, skipped: true, name: item?.name || 'Unknown' };
@@ -115,14 +126,14 @@ async function launchItem(item) {
 
         // If specific browser profile is specified
         if (item.profileDirectory && targetExe && fs.existsSync(targetExe)) {
-          let args = item.args ? item.args.split(' ').filter(Boolean) : [];
+          let args = parseArgs(item.args);
           if (!args.some(a => a.startsWith('--profile-directory='))) {
             args.unshift(`--profile-directory=${item.profileDirectory}`);
           }
           const proc = spawn(targetExe, args, {
             detached: true,
             stdio: 'ignore',
-            cwd: path.dirname(targetExe),
+            cwd: (item.cwd && fs.existsSync(item.cwd)) ? item.cwd : path.dirname(targetExe),
           });
           proc.unref();
           return { success: true, name, type, message: `Started ${name} (${item.profileEmail || item.profileName || item.profileDirectory})` };
@@ -146,7 +157,15 @@ async function launchItem(item) {
         
         // If file exists at direct path
         if (targetExe && fs.existsSync(targetExe)) {
-          let args = item.args ? item.args.split(' ').filter(Boolean) : [];
+          const ext = path.extname(targetExe).toLowerCase();
+
+          // Native shortcuts (.lnk, .url) or batch scripts without extra CLI flags
+          if (ext === '.lnk' || ext === '.url') {
+            await shell.openPath(targetExe);
+            return { success: true, name, type, message: `Launched shortcut ${name}` };
+          }
+
+          let args = parseArgs(item.args);
           if (item.profileDirectory && !args.some(a => a.startsWith('--profile-directory='))) {
             args.unshift(`--profile-directory=${item.profileDirectory}`);
           }
@@ -157,14 +176,33 @@ async function launchItem(item) {
             }
           }
 
+          const workDir = (item.cwd && fs.existsSync(item.cwd)) ? item.cwd : path.dirname(targetExe);
+
+          if (ext === '.bat' || ext === '.cmd') {
+            const proc = spawn(`"${targetExe}"`, args, {
+              detached: true,
+              stdio: 'ignore',
+              cwd: workDir,
+              shell: true,
+            });
+            proc.unref();
+            return { success: true, name, type, message: `Started script ${name}` };
+          }
+
           const proc = spawn(targetExe, args, {
             detached: true,
             stdio: 'ignore',
-            cwd: path.dirname(targetExe),
+            cwd: workDir,
           });
           proc.unref();
           const batchInfo = item.thunderboardBatchName ? ` (Batch: ${item.thunderboardBatchName})` : '';
           return { success: true, name, type, message: `Started ${name}${batchInfo}` };
+        }
+
+        // Fallback: if shortcutPath exists, open it directly
+        if (item.shortcutPath && fs.existsSync(item.shortcutPath)) {
+          await shell.openPath(item.shortcutPath);
+          return { success: true, name, type, message: `Launched ${name}` };
         }
 
         // Fallback: Launch via Windows Shell (cmd start)
